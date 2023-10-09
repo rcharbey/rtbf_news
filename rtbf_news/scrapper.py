@@ -16,9 +16,9 @@ class Scrapper:
 
 class RTBF_Scrapper(Scrapper):
     def scrapp(self) -> List[str]:
-        "Returns a list of (category, title) corresponding to each article"
+        "Returns the category and title of each article"
 
-        result = []
+        results = []
 
         response = requests.get(self.url)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -27,8 +27,9 @@ class RTBF_Scrapper(Scrapper):
         )
 
         for new in news:
-            category = new.find("h4").text
+            category = new.find("h4").text if not new.find("h4") is None else None
             title = new.find("h3").text
-            result.append((category, title))
+            result = " ".join([category, title]) if not category is None else title
+            results.append(result)
 
-        return result
+        return results
