@@ -5,17 +5,17 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class Scrapper:
+class Scraper:
     def __init__(self, url: str):
         self.url = url
 
     @abc.abstractmethod
-    def scrapp(self) -> List[str]:
+    def scrap(self) -> List[str]:
         pass
 
 
-class RTBF_Scrapper(Scrapper):
-    def scrapp(self) -> List[str]:
+class RTBF_Scraper(Scraper):
+    def scrap(self) -> List[str]:
         "Returns the category and title of each article"
 
         results = []
