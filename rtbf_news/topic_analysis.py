@@ -3,6 +3,7 @@ from typing import List
 
 import gensim
 import nltk
+import pandas as pd
 from gensim.models import LdaModel
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -17,9 +18,17 @@ class TopicAnalyzer:
         self.num_topics = num_topics
         nltk.download("wordnet")
         nltk.download("stopwords")
+        self.preprocess()
 
     def preprocess(self):
         self.preprocessed_data = []
+
+        # print(wn.__class__)  # <class 'nltk.corpus.util.LazyCorpusLoader'>
+        # wn.ensure_loaded()  # first access to wn transforms it
+        # print(wn.__class__)  # <class 'nltk.corpus.reader.wordnet.WordNetCorpusReader'>
+
+        # wn.ensure_loaded()
+        lemmatizer = WordNetLemmatizer()
 
         for datum in self.data:
             # lower text
@@ -37,21 +46,38 @@ class TopicAnalyzer:
             datum = [word for word in datum if not word in stop_words]
 
             # Lemmatize words
-            datum = map(lambda word: WordNetLemmatizer().lemmatize(word), datum)
+            datum = map(lambda word: lemmatizer.lemmatize(word), datum)
 
             self.preprocessed_data.append(list(datum))
+            self.dictionary = gensim.corpora.Dictionary(self.preprocessed_data)
+            self.bow_corpus = [
+                self.dictionary.doc2bow(doc) for doc in self.preprocessed_data
+            ]
 
-    def topic_clustering(self):
-        # Build bows of words
-        dictionary = gensim.corpora.Dictionary(self.preprocessed_data)
-        bow_corpus = [dictionary.doc2bow(doc) for doc in self.preprocessed_data]
-
+    def get_topics(self):
         # Build topics
         lda_model = LdaModel(
-            bow_corpus, num_topics=self.num_topics, id2word=dictionary, passes=1000
+            self.bow_corpus, num_topics=self.num_topics, id2word=self.dictionary
         )
 
-        topics = []
-        for idx, topic in lda_model.print_topics(-1):
-            print("Topic: {} -> Words: {}".format(idx, topic))
-            topics.append(topic)
+        # Create a dataframe of topics as columns
+        self.topics = pd.DataFrame(
+            [
+                sorted(lda_model.show_topic(topic), key=lambda x: x[1], reverse=True)
+                for topic in range(self.num_topics)
+            ]
+        ).T
+        self.topics.columns = self.topics.iloc[0, :].apply(lambda x: x[0])
+        self.topics.index = [f"Word n°{i+1}" for i in range(len(self.topics))]
+
+        # drop duplicate topics
+        self.topics = self.topics.loc[:, ~self.topics.columns.duplicated(keep="first")]
+
+        # sort columns by clearest topics (higher score of the most important word)
+        column_order = [
+            x[0]
+            for x in sorted(
+                self.topics.loc["Word n°1", :].values, key=lambda x: x[1], reverse=True
+            )
+        ]
+        self.topics = self.topics.loc[:, column_order]
