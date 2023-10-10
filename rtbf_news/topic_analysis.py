@@ -23,11 +23,6 @@ class TopicAnalyzer:
     def preprocess(self):
         self.preprocessed_data = []
 
-        # print(wn.__class__)  # <class 'nltk.corpus.util.LazyCorpusLoader'>
-        # wn.ensure_loaded()  # first access to wn transforms it
-        # print(wn.__class__)  # <class 'nltk.corpus.reader.wordnet.WordNetCorpusReader'>
-
-        # wn.ensure_loaded()
         lemmatizer = WordNetLemmatizer()
 
         for datum in self.data:
@@ -41,8 +36,13 @@ class TopicAnalyzer:
             # trasform datum to word list
             datum = datum.split()
 
+            # remove small words
+            datum = [word for word in datum if len(word) > 3]
+
             # remove stop words
-            stop_words = set(stopwords.words("french"))
+            stop_words = set(stopwords.words("french")).union(
+                set(["vidéo", "tipik", "audio"])
+            )
             datum = [word for word in datum if not word in stop_words]
 
             # Lemmatize words
