@@ -14,11 +14,11 @@ nltk.download("stopwords")
 
 class TopicAnalyzer:
     def __init__(
-        self, data: List[str], model_name: str = "camembert-base", num_topics: int = 20
+        self, data: List[str], model_name: str = "camembert-base", nb_topics: int = 20
     ):
         self.data = data
         self.model_name = model_name
-        self.num_topics = num_topics
+        self.nb_topics = nb_topics
         self.preprocess()
 
     def preprocess(self):
@@ -61,7 +61,7 @@ class TopicAnalyzer:
         # Build topics
         lda_model = LdaModel(
             self.bow_corpus,
-            num_topics=self.num_topics,
+            num_topics=self.nb_topics,
             id2word=self.dictionary,
             passes=10,
         )
@@ -70,7 +70,7 @@ class TopicAnalyzer:
         self.topics = pd.DataFrame(
             [
                 sorted(lda_model.show_topic(topic), key=lambda x: x[1], reverse=True)
-                for topic in range(self.num_topics)
+                for topic in range(self.nb_topics)
             ]
         ).T
         self.topics.index = [f"Word n°{i+1}" for i in range(len(self.topics))]

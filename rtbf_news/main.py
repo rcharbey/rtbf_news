@@ -4,10 +4,13 @@ from topic_analysis import TopicAnalyzer
 
 url = "https://www.rtbf.be/en-continu"
 
-scraper = RTBF_Scraper(url=url, nb_news=2000)
+NB_NEWS = 2000
+NB_TOPICS = 25
+
+scraper = RTBF_Scraper(url=url, nb_news=NB_NEWS)
 data = scraper.scrap()
 
-analyzer = TopicAnalyzer(data, num_topics=25)
+analyzer = TopicAnalyzer(data, nb_topics=NB_TOPICS)
 analyzer.preprocess()
 analyzer.get_topics()
 topics = analyzer.topics
