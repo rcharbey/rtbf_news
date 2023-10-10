@@ -104,9 +104,6 @@ class RTBF_Scraper(Scraper):
             else:
                 category = None
 
-            date = self.driver.find_element(By.XPATH, new_xpath + "/footer")
-
-            print(counter, category, title)
             result = " ".join([category, title]) if not category is None else title
             results.append(result)
 

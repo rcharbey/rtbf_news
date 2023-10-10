@@ -8,6 +8,9 @@ from gensim.models import LdaModel
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
+nltk.download("wordnet")
+nltk.download("stopwords")
+
 
 class TopicAnalyzer:
     def __init__(
@@ -16,8 +19,6 @@ class TopicAnalyzer:
         self.data = data
         self.model_name = model_name
         self.num_topics = num_topics
-        nltk.download("wordnet")
-        nltk.download("stopwords")
         self.preprocess()
 
     def preprocess(self):
@@ -49,15 +50,20 @@ class TopicAnalyzer:
             datum = map(lambda word: lemmatizer.lemmatize(word), datum)
 
             self.preprocessed_data.append(list(datum))
-            self.dictionary = gensim.corpora.Dictionary(self.preprocessed_data)
-            self.bow_corpus = [
-                self.dictionary.doc2bow(doc) for doc in self.preprocessed_data
-            ]
+
+        # Compute dictionary and bow corpus of the news corpus
+        self.dictionary = gensim.corpora.Dictionary(self.preprocessed_data)
+        self.bow_corpus = [
+            self.dictionary.doc2bow(doc) for doc in self.preprocessed_data
+        ]
 
     def get_topics(self):
         # Build topics
         lda_model = LdaModel(
-            self.bow_corpus, num_topics=self.num_topics, id2word=self.dictionary
+            self.bow_corpus,
+            num_topics=self.num_topics,
+            id2word=self.dictionary,
+            passes=10,
         )
 
         # Create a dataframe of topics as columns
@@ -67,17 +73,15 @@ class TopicAnalyzer:
                 for topic in range(self.num_topics)
             ]
         ).T
-        self.topics.columns = self.topics.iloc[0, :].apply(lambda x: x[0])
         self.topics.index = [f"Word n°{i+1}" for i in range(len(self.topics))]
 
-        # drop duplicate topics
-        self.topics = self.topics.loc[:, ~self.topics.columns.duplicated(keep="first")]
+        # topics are names depending on their most important word
+        self.topic_names = self.topics.iloc[0, :].apply(lambda x: x[0])
 
-        # sort columns by clearest topics (higher score of the most important word)
-        column_order = [
-            x[0]
-            for x in sorted(
-                self.topics.loc["Word n°1", :].values, key=lambda x: x[1], reverse=True
+        # Get topic by news
+        self.news_to_topic = []
+        for news in self.bow_corpus:
+            topic_name = (
+                "" if not lda_model[news] else self.topic_names[lda_model[news][0][0]]
             )
-        ]
-        self.topics = self.topics.loc[:, column_order]
+            self.news_to_topic.append(topic_name)
